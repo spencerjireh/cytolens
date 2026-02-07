@@ -1,0 +1,13 @@
+node_modules
+.git
+__pycache__
+*.pyc
+.venv
+.env
+.idea
+.vscode
+*.egg-info
+dist
+frontend/dist
+frontend/node_modules
+backend/__pycache__
