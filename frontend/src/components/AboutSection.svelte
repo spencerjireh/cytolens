@@ -1,23 +1,89 @@
 <script lang="ts">
   const features = [
-    { name: 'Radius', desc: 'Mean distance from center to points on the perimeter' },
-    { name: 'Texture', desc: 'Standard deviation of gray-scale values' },
-    { name: 'Perimeter', desc: 'Perimeter of the cell nucleus' },
-    { name: 'Area', desc: 'Area of the cell nucleus' },
-    { name: 'Smoothness', desc: 'Local variation in radius lengths' },
-    { name: 'Compactness', desc: 'Perimeter squared divided by area minus one' },
-    { name: 'Concavity', desc: 'Severity of concave portions of the contour' },
-    { name: 'Concave Points', desc: 'Number of concave portions of the contour' },
-    { name: 'Symmetry', desc: 'Symmetry of the cell nucleus' },
-    { name: 'Fractal Dimension', desc: 'Coastline approximation minus one' },
+    {
+      name: 'Radius',
+      desc: 'Mean distance from the center of the nucleus to points on its perimeter, averaged across all nuclei in the image.',
+    },
+    {
+      name: 'Texture',
+      desc: 'Standard deviation of gray-scale pixel intensities, capturing surface roughness of the nucleus.',
+    },
+    {
+      name: 'Perimeter',
+      desc: 'Total boundary length of the nucleus contour in the digitized image.',
+    },
+    {
+      name: 'Area',
+      desc: 'Total area enclosed by the nucleus contour, measured in pixels squared.',
+    },
+    {
+      name: 'Smoothness',
+      desc: 'Local variation in radius lengths, quantifying how irregular the nuclear boundary is.',
+    },
+    {
+      name: 'Compactness',
+      desc: 'Computed as (perimeter\u00B2 / area) \u2212 1. Higher values indicate more irregular shapes.',
+    },
+    {
+      name: 'Concavity',
+      desc: 'Severity of concave portions of the nucleus contour, measuring how deeply the boundary folds inward.',
+    },
+    {
+      name: 'Concave Points',
+      desc: 'Number of concave (inward-bending) segments along the nucleus contour.',
+    },
+    {
+      name: 'Symmetry',
+      desc: 'Difference in length between lines perpendicular to the major axis on either side of the nucleus.',
+    },
+    {
+      name: 'Fractal Dimension',
+      desc: 'Boundary complexity measured via the "coastline approximation" \u2212 1. Higher values indicate more complex, jagged edges.',
+    },
   ];
 
   const techStack = [
-    { label: 'Frontend', value: 'Svelte 5, Tailwind CSS, Plotly.js' },
+    { label: 'Frontend', value: 'Svelte 5, Tailwind CSS v4, Plotly.js' },
     { label: 'Backend', value: 'FastAPI, Python 3.12' },
-    { label: 'ML Model', value: 'Logistic Regression (scikit-learn)' },
-    { label: 'Dataset', value: 'Wisconsin Diagnostic Breast Cancer (WDBC)' },
-    { label: 'Deployment', value: 'Docker, single-container architecture' },
+    { label: 'ML', value: 'scikit-learn (Logistic Regression)' },
+    { label: 'Data', value: 'WDBC (UCI ML Repository)' },
+    { label: 'Deployment', value: 'Docker, Render' },
+    { label: 'Tooling', value: 'Ruff, Prettier, Pre-commit' },
+  ];
+
+  const metrics = {
+    headline: [
+      { label: 'Accuracy', value: '97.4%' },
+      { label: 'Precision', value: '0.97' },
+      { label: 'F1 Score', value: '0.97' },
+    ],
+    perClass: [
+      { label: 'Benign', precision: '0.97', recall: '0.99', f1: '0.98', support: 71 },
+      { label: 'Malignant', precision: '0.98', recall: '0.95', f1: '0.96', support: 43 },
+    ],
+  };
+
+  const limitations = [
+    {
+      title: 'Not a clinical diagnostic tool',
+      desc: 'CytoLens is a portfolio project and learning tool. It has not been validated for clinical decision-making and must not be used to diagnose or treat any medical condition.',
+    },
+    {
+      title: 'Limited dataset',
+      desc: 'The WDBC dataset contains 569 samples from a single institution (University of Wisconsin). Performance on data from other populations, imaging equipment, or preparation methods is unknown.',
+    },
+    {
+      title: 'Linear classifier',
+      desc: 'Logistic Regression was chosen for its interpretability, but it assumes a linear decision boundary. More complex models (e.g., gradient-boosted trees, neural networks) may capture non-linear patterns.',
+    },
+    {
+      title: 'No uncertainty quantification',
+      desc: 'The model outputs a single probability estimate without confidence intervals or calibration guarantees.',
+    },
+    {
+      title: 'Manual slider inputs',
+      desc: 'Users manually set feature values via sliders rather than extracting them from actual cell images. In a clinical workflow, feature extraction would be automated from microscopy images.',
+    },
   ];
 </script>
 
@@ -25,12 +91,19 @@
   <!-- Hero -->
   <div class="mb-12 animate-fade-up">
     <h1 class="font-display text-3xl lg:text-4xl text-slate-800 mb-3">About CytoLens</h1>
+    <p class="text-base text-slate-500 leading-relaxed max-w-2xl mb-3">
+      CytoLens is an interactive machine learning tool that predicts breast cancer malignancy from
+      cell nucleus measurements. Users adjust 30 morphological features via sliders and see
+      real-time predictions with a radar chart visualization of the input data.
+    </p>
     <p class="text-base text-slate-500 leading-relaxed max-w-2xl">
-      A machine learning-powered tool for breast cancer malignancy prediction, built to assist
-      cytology analysis using measurements from fine needle aspirate (FNA) of breast masses.
+      Built as a full-stack portfolio project, it demonstrates end-to-end ML deployment: model
+      training, a Python API, a modern reactive frontend, and containerized delivery -- all in a
+      single, production-ready application.
     </p>
   </div>
 
+  <!-- How It Works + The Dataset -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
     <!-- How it works -->
     <div class="card p-6 animate-fade-up delay-100">
@@ -60,8 +133,8 @@
             1
           </div>
           <p>
-            A fine needle aspirate (FNA) is taken from a breast mass, and a digitized image of the
-            cell nuclei is produced.
+            A fine needle aspirate (FNA) is taken from a breast mass. The sample is stained and a
+            digitized image of the cell nuclei is produced under a microscope.
           </p>
         </div>
         <div class="flex gap-3">
@@ -71,8 +144,9 @@
             2
           </div>
           <p>
-            Ten real-valued features are computed for each cell nucleus, with three statistical
-            measures per feature (mean, standard error, worst).
+            Ten real-valued features describing nuclear morphology are computed for each nucleus.
+            Three statistics are recorded per feature -- mean, standard error, and worst (largest)
+            -- yielding 30 measurements total.
           </p>
         </div>
         <div class="flex gap-3">
@@ -82,14 +156,15 @@
             3
           </div>
           <p>
-            These 30 measurements are fed into a logistic regression model that outputs a
-            probability of malignancy.
+            The 30 measurements are standardized and fed into a logistic regression model, which
+            outputs a probability of malignancy. A radar chart visualizes the normalized feature
+            values across all three statistic groups.
           </p>
         </div>
       </div>
     </div>
 
-    <!-- Model details -->
+    <!-- The Dataset -->
     <div class="card p-6 animate-fade-up delay-200">
       <div class="flex items-center gap-2 mb-4">
         <div class="w-8 h-8 rounded-lg bg-primary-50 text-primary flex items-center justify-center">
@@ -107,20 +182,117 @@
             />
           </svg>
         </div>
-        <h2 class="text-base font-semibold text-slate-700">Model Details</h2>
+        <h2 class="text-base font-semibold text-slate-700">The Dataset</h2>
       </div>
-      <p class="text-sm text-slate-600 leading-relaxed mb-4">
-        The model uses <strong>Logistic Regression</strong> trained on the Wisconsin Diagnostic Breast
-        Cancer (WDBC) dataset, which contains 569 instances with 30 features each.
+      <p class="text-sm text-slate-600 leading-relaxed mb-3">
+        The model is trained on the <strong>Wisconsin Diagnostic Breast Cancer (WDBC)</strong>
+        dataset from the UCI Machine Learning Repository. It contains
+        <strong>569 samples</strong> -- 357 benign and 212 malignant -- each described by 30 features
+        derived from digitized FNA images.
+      </p>
+      <p class="text-sm text-slate-600 leading-relaxed mb-3">
+        The 30 features come from 10 nuclear morphology measurements, each recorded as three
+        statistics: mean value across all nuclei, standard error, and worst (mean of the three
+        largest values).
       </p>
       <p class="text-sm text-slate-600 leading-relaxed">
-        Input features are standardized using a fitted scaler before prediction. The radar chart
-        visualizes each feature group normalized to a 0--1 range for intuitive comparison.
+        <strong>Training pipeline:</strong> features are standardized with
+        <code class="text-xs bg-slate-50 px-1 py-0.5 rounded">StandardScaler</code>, then classified
+        with Logistic Regression (L2 regularization, LBFGS solver, 80/20 train-test split).
       </p>
     </div>
   </div>
 
-  <!-- Features table -->
+  <!-- Model Performance -->
+  <div class="card p-6 mb-8 animate-fade-up delay-200">
+    <div class="flex items-center gap-2 mb-5">
+      <div class="w-8 h-8 rounded-lg bg-primary-50 text-primary flex items-center justify-center">
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="1.5"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.562.562 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
+          />
+        </svg>
+      </div>
+      <h2 class="text-base font-semibold text-slate-700">Model Performance</h2>
+    </div>
+
+    <!-- Headline stats -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      {#each metrics.headline as stat}
+        <div class="text-center p-3 rounded-xl bg-primary-50/50">
+          <div class="text-2xl font-bold text-primary">{stat.value}</div>
+          <div class="text-xs text-slate-500 mt-1">{stat.label}</div>
+        </div>
+      {/each}
+    </div>
+
+    <!-- Per-class table -->
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-slate-100">
+            <th
+              class="text-left py-2 pr-4 text-xs font-medium text-slate-400 uppercase tracking-wider"
+              >Class</th
+            >
+            <th
+              class="text-center py-2 px-3 text-xs font-medium text-slate-400 uppercase tracking-wider"
+              >Precision</th
+            >
+            <th
+              class="text-center py-2 px-3 text-xs font-medium text-slate-400 uppercase tracking-wider"
+              >Recall</th
+            >
+            <th
+              class="text-center py-2 px-3 text-xs font-medium text-slate-400 uppercase tracking-wider"
+              >F1</th
+            >
+            <th
+              class="text-center py-2 pl-3 text-xs font-medium text-slate-400 uppercase tracking-wider"
+              >Support</th
+            >
+          </tr>
+        </thead>
+        <tbody>
+          {#each metrics.perClass as row}
+            <tr class="border-b border-slate-50 last:border-0">
+              <td class="py-2.5 pr-4">
+                <div class="flex items-center gap-1.5">
+                  <span
+                    class="w-2 h-2 rounded-full {row.label === 'Benign'
+                      ? 'bg-benign'
+                      : 'bg-malignant'}"
+                  ></span>
+                  <span class="font-medium text-slate-700">{row.label}</span>
+                </div>
+              </td>
+              <td class="text-center py-2.5 px-3 text-slate-600">{row.precision}</td>
+              <td class="text-center py-2.5 px-3 text-slate-600">{row.recall}</td>
+              <td class="text-center py-2.5 px-3 text-slate-600">{row.f1}</td>
+              <td class="text-center py-2.5 pl-3 text-slate-600">{row.support}</td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
+
+    <p class="text-xs text-slate-400 mt-4 leading-relaxed">
+      Evaluated on a held-out 20% test split (114 samples). High recall for benign (0.99) means very
+      few benign cases are misclassified as malignant, while high precision for malignant (0.98)
+      means the model rarely raises false alarms. The balanced F1 scores indicate consistent
+      performance across both classes.
+    </p>
+  </div>
+
+  <!-- Measured Features -->
   <div class="card p-6 mb-8 animate-fade-up delay-300">
     <div class="flex items-center gap-2 mb-4">
       <div class="w-8 h-8 rounded-lg bg-primary-50 text-primary flex items-center justify-center">
@@ -162,8 +334,8 @@
     </div>
   </div>
 
-  <!-- Tech stack -->
-  <div class="card p-6 animate-fade-up delay-400">
+  <!-- Tech Stack -->
+  <div class="card p-6 mb-8 animate-fade-up delay-400">
     <div class="flex items-center gap-2 mb-4">
       <div class="w-8 h-8 rounded-lg bg-primary-50 text-primary flex items-center justify-center">
         <svg
@@ -182,20 +354,101 @@
       </div>
       <h2 class="text-base font-semibold text-slate-700">Tech Stack</h2>
     </div>
-    <div class="space-y-2">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
       {#each techStack as item}
-        <div class="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
-          <span class="text-sm font-medium text-slate-600">{item.label}</span>
-          <span class="text-sm text-slate-400">{item.value}</span>
+        <div class="p-3 rounded-xl bg-surface-dim">
+          <div class="text-xs font-medium text-primary uppercase tracking-wider mb-1">
+            {item.label}
+          </div>
+          <div class="text-sm text-slate-600">{item.value}</div>
         </div>
       {/each}
     </div>
   </div>
 
+  <!-- Limitations -->
+  <div class="card p-6 mb-8 animate-fade-up delay-400">
+    <div class="flex items-center gap-2 mb-4">
+      <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="1.5"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
+          />
+        </svg>
+      </div>
+      <h2 class="text-base font-semibold text-slate-700">Limitations</h2>
+    </div>
+    <div class="space-y-3">
+      {#each limitations as item, i}
+        <div class="flex gap-3 p-3 rounded-xl bg-surface-dim">
+          <span
+            class="text-[10px] font-bold text-amber-600 bg-amber-50 w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5"
+          >
+            {i + 1}
+          </span>
+          <div>
+            <div class="text-sm font-medium text-slate-700">{item.title}</div>
+            <div class="text-xs text-slate-400 mt-0.5 leading-relaxed">{item.desc}</div>
+          </div>
+        </div>
+      {/each}
+    </div>
+  </div>
+
+  <!-- Acknowledgments -->
+  <div class="card p-6 mb-8 animate-fade-up delay-400">
+    <div class="flex items-center gap-2 mb-4">
+      <div class="w-8 h-8 rounded-lg bg-primary-50 text-primary flex items-center justify-center">
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="1.5"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
+          />
+        </svg>
+      </div>
+      <h2 class="text-base font-semibold text-slate-700">Acknowledgments</h2>
+    </div>
+    <div class="space-y-3 text-sm text-slate-600 leading-relaxed">
+      <p>
+        This project was inspired by
+        <a
+          href="https://www.youtube.com/@alejaborgosnextaim"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-primary hover:text-primary-dark underline underline-offset-2"
+          >Alejandro AO's</a
+        >
+        breast cancer predictor tutorial. CytoLens extends the original concept with a redesigned Svelte
+        5 frontend, interactive radar chart, responsive layout, and containerized deployment.
+      </p>
+      <p>
+        <strong>Dataset citation:</strong> Wolberg, W.H., Street, W.N., & Mangasarian, O.L. (1995). Breast
+        Cancer Wisconsin (Diagnostic) Data Set. UCI Machine Learning Repository, University of Wisconsin-Madison.
+      </p>
+      <p>
+        Built by <strong>Spencer Jireh Cebrian</strong>.
+      </p>
+    </div>
+  </div>
+
   <!-- Footer -->
   <div class="mt-12 text-center">
-    <p class="text-xs text-slate-400">
-      Built as a demonstration of full-stack ML deployment. Not intended for clinical use.
-    </p>
+    <p class="font-display text-lg text-slate-300 mb-1">CytoLens</p>
+    <p class="text-xs text-slate-400">Not intended for clinical use.</p>
   </div>
 </div>
