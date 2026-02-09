@@ -42,13 +42,73 @@
     },
   ];
 
-  const techStack = [
-    { label: 'Frontend', value: 'Svelte 5, Tailwind CSS v4, Plotly.js' },
-    { label: 'Backend', value: 'FastAPI, Python 3.12' },
-    { label: 'ML', value: 'scikit-learn (Logistic Regression)' },
-    { label: 'Data', value: 'WDBC (UCI ML Repository)' },
-    { label: 'Deployment', value: 'Docker, Render' },
-    { label: 'Tooling', value: 'Ruff, Prettier, Pre-commit' },
+  const methodologyTopics = [
+    {
+      title: 'Logistic Regression',
+      paragraphs: [
+        'Logistic regression models the probability of a binary outcome (benign vs. malignant) by passing a linear combination of features through the sigmoid function. Unlike linear regression, the output is bounded between 0 and 1, making it interpretable as a probability.',
+        'The model learns a weight (coefficient) for each of the 30 features. A positive weight means higher values of that feature push the prediction toward malignant; a negative weight pushes toward benign. This transparency is valuable in medical contexts.',
+        'The decision boundary is linear in feature space: a hyperplane separating the two classes. Despite this simplicity, logistic regression performs well on WDBC because the classes are largely linearly separable after standardization.',
+      ],
+      formula:
+        '\u03C3(z) = 1 / (1 + e^(-z))\nwhere z = w\u2080 + w\u2081x\u2081 + w\u2082x\u2082 + ... + w\u2083\u2080x\u2083\u2080',
+    },
+    {
+      title: 'Feature Standardization',
+      paragraphs: [
+        'StandardScaler transforms each feature to have zero mean and unit variance using the z-score formula. This is critical because the 30 features have vastly different scales -- radius is measured in microns while fractal dimension is a small decimal.',
+        'Without standardization, features with larger numeric ranges would dominate the gradient updates during training, preventing the optimizer from converging efficiently. Standardization ensures all features contribute proportionally.',
+        'The scaler is fit only on training data and then applied to test data, preventing data leakage. CytoLens stores the fitted scaler alongside the model so that user inputs are transformed identically at inference time.',
+      ],
+      formula: 'z = (x - \u03BC) / \u03C3\nwhere \u03BC = sample mean, \u03C3 = sample std dev',
+    },
+    {
+      title: 'L2 Regularization (Ridge)',
+      paragraphs: [
+        'L2 regularization adds a penalty term proportional to the squared magnitude of the model weights. This discourages any single coefficient from growing too large, which reduces overfitting -- especially important with only 569 samples.',
+        'The WDBC features are highly correlated (e.g., radius, perimeter, and area all measure nuclear size). Without regularization, correlated features can produce unstable, inflated coefficients. L2 shrinks them toward zero smoothly.',
+        'The regularization strength is controlled by the inverse parameter C. Smaller C means stronger regularization. scikit-learn defaults to C=1.0, which provides moderate regularization suitable for this dataset.',
+      ],
+      formula:
+        'Loss = -\u03A3[y\u1D62 log(\u0177\u1D62) + (1-y\u1D62) log(1-\u0177\u1D62)] + (1/2C) \u03A3w\u2C7C\u00B2\n              cross-entropy loss              L2 penalty',
+    },
+    {
+      title: 'LBFGS Optimization',
+      paragraphs: [
+        'Limited-memory Broyden-Fletcher-Goldfarb-Shanno (L-BFGS) is a quasi-Newton optimization method. Unlike basic gradient descent, which uses only first-order gradient information, L-BFGS approximates the inverse Hessian matrix to find better search directions.',
+        'This curvature information allows L-BFGS to converge in far fewer iterations than gradient descent, making it well-suited for moderately sized problems like WDBC (569 samples, 30 features).',
+        'L-BFGS stores only a few vectors to approximate the Hessian rather than the full matrix, keeping memory usage low -- hence "limited-memory." It is the default solver for logistic regression in scikit-learn when L2 penalty is used.',
+      ],
+      formula: null,
+    },
+    {
+      title: 'Evaluation Metrics',
+      paragraphs: [
+        'Precision measures the fraction of predicted positives that are actually positive. In cancer screening, high precision for "malignant" means fewer false alarms -- patients predicted malignant almost certainly have malignant cells.',
+        'Recall (sensitivity) measures the fraction of actual positives that are correctly identified. High recall for "benign" (0.99) means almost no benign cases are misclassified as malignant, reducing unnecessary patient anxiety and invasive procedures.',
+        'F1 score is the harmonic mean of precision and recall, providing a single metric that balances both concerns. The harmonic mean penalizes extreme imbalances, so a high F1 requires both precision and recall to be strong.',
+      ],
+      formula:
+        'F1 = 2 \u00D7 (Precision \u00D7 Recall) / (Precision + Recall)\nPrecision = TP / (TP + FP)\nRecall = TP / (TP + FN)',
+    },
+    {
+      title: 'Train-Test Split',
+      paragraphs: [
+        'The dataset is split 80/20: 455 samples for training and 114 for testing. The model never sees test data during training, providing an unbiased estimate of generalization performance.',
+        'A fixed random_state seed ensures reproducibility -- the same split is used every time the model is retrained, making experiments comparable and results verifiable.',
+        'Standardization parameters (mean and standard deviation) are computed from training data only, then applied to both sets. Fitting the scaler on the full dataset would leak information from the test set into the model, producing over-optimistic accuracy estimates.',
+      ],
+      formula: null,
+    },
+    {
+      title: 'Feature Statistics (Mean, SE, Worst)',
+      paragraphs: [
+        'Each of the 10 base morphological features is summarized with three statistics, yielding 30 total features. The mean captures the central tendency across all nuclei in the FNA sample.',
+        'Standard error (SE) quantifies the variability of measurements across nuclei. High SE in a feature like radius suggests heterogeneous nuclear sizes, which can be a hallmark of malignancy.',
+        'The "worst" value is the mean of the three largest nuclei for each feature. This captures the most abnormal cells in the sample, which are often the most diagnostically informative since malignant tumors tend to produce outlier nuclei.',
+      ],
+      formula: 'SE = s / \u221An\nwhere s = sample std dev, n = number of nuclei',
+    },
   ];
 
   const metrics = {
@@ -334,7 +394,7 @@
     </div>
   </div>
 
-  <!-- Tech Stack -->
+  <!-- ML & Statistics Methodology -->
   <div class="card p-6 mb-8 animate-fade-up delay-400">
     <div class="flex items-center gap-2 mb-4">
       <div class="w-8 h-8 rounded-lg bg-primary-50 text-primary flex items-center justify-center">
@@ -348,19 +408,42 @@
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
-            d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"
+            d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5"
           />
         </svg>
       </div>
-      <h2 class="text-base font-semibold text-slate-700">Tech Stack</h2>
+      <div>
+        <h2 class="text-base font-semibold text-slate-700">ML & Statistics Methodology</h2>
+        <p class="text-[11px] text-slate-400">
+          The statistical and algorithmic foundations behind the model
+        </p>
+      </div>
     </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-      {#each techStack as item}
-        <div class="p-3 rounded-xl bg-surface-dim">
-          <div class="text-xs font-medium text-primary uppercase tracking-wider mb-1">
-            {item.label}
+    <div class="space-y-4">
+      {#each methodologyTopics as topic, i}
+        <div class="p-4 rounded-xl bg-surface-dim">
+          <div class="flex items-start gap-3">
+            <span
+              class="text-[10px] font-bold text-primary bg-primary-50 w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5"
+            >
+              {i + 1}
+            </span>
+            <div class="min-w-0">
+              <div class="text-sm font-medium text-slate-700 mb-2">{topic.title}</div>
+              <div class="space-y-2">
+                {#each topic.paragraphs as paragraph}
+                  <p class="text-xs text-slate-500 leading-relaxed">{paragraph}</p>
+                {/each}
+              </div>
+              {#if topic.formula}
+                <div
+                  class="mt-3 p-3 rounded-lg bg-slate-50 border border-slate-100 font-mono text-xs text-slate-600 whitespace-pre leading-relaxed"
+                >
+                  {topic.formula}
+                </div>
+              {/if}
+            </div>
           </div>
-          <div class="text-sm text-slate-600">{item.value}</div>
         </div>
       {/each}
     </div>
